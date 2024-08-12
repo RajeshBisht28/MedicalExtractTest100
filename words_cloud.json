@@ -1,0 +1,26 @@
+[
+  {
+    "name": "provider",
+    "type": "provider"
+  },
+  {
+    "name": "dos",
+    "type": "date"
+  },
+  {
+    "name": "admit date",
+    "type": "date"
+  },
+  {
+    "name": "encounter date",
+    "type": "date"
+  },
+  {
+    "name": "admit",
+    "type": "date"
+  },
+  {
+    "name": "physician",
+    "type": "person"
+  }
+]
