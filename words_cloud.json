@@ -20,7 +20,15 @@
     "type": "date"
   },
   {
+    "name": "visit",
+    "type": "date"
+  },
+  {
     "name": "physician",
-    "type": "person"
+    "type": "physician"
+  },
+  {
+    "name": "hospital",
+    "type": "hospital"
   }
 ]

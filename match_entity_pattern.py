@@ -47,8 +47,7 @@ def read_file_by_line(file_path):
     line_text = []
     with open(file_path, 'r') as file:
          for line in file:
-             rtext = line.rstrip()
-             line_text.append(rtext)
+             line_text.append(line)
     return line_text
 
 def collecting_page_data(dir_path):
@@ -81,7 +80,7 @@ def page_text_number(file_path):
        pnumber = int(match.group())
     return pnumber, filterContent
 
-def create_regex_wordcloud(file_path):
+def create_regex_cloud(file_path):
     text_list = read_file_by_line(file_path)
     for lst in text_list:
         rtext = lst.rstrip()
@@ -101,16 +100,8 @@ def load_wordclouds_info(file_path):
         rtext = name.rstrip()
         REGEX_LIST.append(create_regex(rtext))
     
-def load_reportclouds_info(file_path):    
-    with open(file_path, 'r') as file:
-         content = file.read()
-    data = json.loads(content)     
-    for item in data:
-        name = item['name']
-        ENTITY_NAME.append(name)
-        ENTITY_TYPE.append(item['type'])
-        rtext = name.rstrip()
-        REGEX_LIST.append(create_regex(rtext))
+    #return  entity_names, entity_types
+
 
 def create_regex(word):    
     spaced_word = r'\s*'.join(list(word))
@@ -256,92 +247,6 @@ def entity_trace_bytype(entityType, text, startIndex):
 
     return ""
 
-def find_report_matches(text, regexList):
-    match_list = []
-    text_list = []  
-    counter=-1
-    for regex in regexList:
-        counter=counter+1                  
-        for match in re.finditer(regex, text, re.IGNORECASE):
-            if(match):
-               print(f"matched900:{counter}")
-               match_list.append(match)
-               text_list.append(text)              
-    
-    return match_list, text_list
-
-
-def call_process_reporttype(dir_path, filter_path, RESULT_FILE):
-    reportDirpath = os.path.dirname(RESULT_FILE)
-    report_outpath = os.path.join(os.path.dirname(RESULT_FILE), 'reports_result.txt') 
-    reportwordpath = os.path.join(os.path.dirname(filter_path), 'reports_word.txt')
-   
-    outfile_path = Path(report_outpath)   
-    outfile_path.touch() #Create blank file of output
-
-    stxt = f"       Start: {datetime.datetime.now()}"
-    write_or_append_to_file(report_outpath, stxt)
-    print(f"read file: {reportwordpath}")
-    print(f"report file: {report_outpath}")
-    report_words_list = read_file_by_line(reportwordpath)
-    print(f"wordlist: {report_words_list}")
-    process_report_type(dir_path, report_words_list, report_outpath)
-    stxt = f"       End: {datetime.datetime.now()}"
-    write_or_append_to_file(report_outpath, stxt)
-
-
-def process_report_type(dir_path, report_words_list, report_file):
-    file_path_list = list_directory_files(dir_path, ".txt")  
-    report_regex_list = []
-    pageNumber = 0
-    # Create all possible pattern to finds report's word
-    for rp in report_words_list:
-        rg = create_regex(rp)
-        report_regex_list.append(rg)
-    
-    print(f"listOFRegexes111: {report_regex_list}")
-    resultCollection = []
-    textCollection = []
-    # traverse each file 
-    for fullpath in file_path_list:
-        pageNumber = pagenumber_find(fullpath)
-        text_list = read_file_by_line(fullpath)
-        lcount = -1
-        for stext in text_list:
-            lcount = lcount + 1
-            words_split = re.split(r'\b', stext)
-            if((len(words_split) > 8) and (lcount != 0)):
-              continue
-            print(f"lcount: {lcount} : {stext}")
-            mcollection, ptextList = find_report_matches(stext, report_regex_list)
-            resultCollection.extend(mcollection)
-            textCollection.extend(ptextList)
-        
-        print(f"text_mached: {textCollection}")
-        print(f"resultsMatched : {len(resultCollection)}")
-        for match in resultCollection:
-            start, end = match.span()
-            text = textCollection[0]            
-            endIndex = len(text)            
-            portion_after = re.sub(r'\s+', ' ', text[end:endIndex])
-            print(f"portion_after: {portion_after}")            
-            wordsSplits = re.split(r'\b', portion_after)
-            filtered_words = [word for word in wordsSplits if word.strip()]
-            print(f"Next Word {filtered_words}")
-            cont_txt = f"page: {pageNumber} Matched: {match.group()} {filtered_words[0]} start {start} end {end}"
-            write_or_append_to_file(report_file, cont_txt)
-            break
-    
-
-def pagenumber_find(file_path):
-    pnumber = 0
-    file_without_extension = Path(os.path.basename(file_path)).stem    
-    match = re.search(r'\d+', file_without_extension)
-    if match:
-       pnumber = int(match.group())
-    return pnumber
-
-
 def process_run(dir_path):
     # Collect all text files text and its page number. 
     # page_list : file page number
@@ -374,8 +279,19 @@ if __name__ == '__main__':
    dir_path = arguments[1]
    filter_path = arguments[2]
    RESULT_FILE = arguments[3]
-   call_process_reporttype(dir_path, filter_path, RESULT_FILE)
- 
    
-
-
+   outfile_path = Path(RESULT_FILE)   
+   outfile_path.touch() #Create blank file of output
+   
+   #Create all possible regex for each from words_cloud.txt file
+   #create_regex_cloud(filter_path)
+   load_wordclouds_info(filter_path)
+   
+   NLP_MODEL = spacy.load("en_core_web_sm")
+   
+   stxt = f"       Start: {datetime.datetime.now()}"
+   write_or_append_to_file(RESULT_FILE, stxt)
+   process_run(dir_path)
+   stxt = f"       End: {datetime.datetime.now()}"
+   write_or_append_to_file(RESULT_FILE, stxt)
+   
